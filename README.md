@@ -16,4 +16,4 @@ Creating an offer allows for its funding of both the Token and or Ether potentia
 
 Funds can be transferred from one offer to another by their owner.
 
-#It is unwise to use this contract outside of tested until it has undergone thorough security auditing, especially considering it is currently being designed. 
+#It is unwise to use this contract outside of testnet until it has undergone thorough security auditing, especially considering it is currently being designed. 
