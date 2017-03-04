@@ -269,6 +269,14 @@ contract proxyTrader is proxyRecipient {
         return true;
     }
     
+    // internal function min
+    // returns the minimum of 2 given values
+    //
+    function min(uint A, uint B) internal returns (uint) {
+        if(A < B) return A;
+        return B;
+    }
+    
     function takerBuysAssetImplementation(
         uint256 id,
         address taker, 
@@ -280,19 +288,18 @@ contract proxyTrader is proxyRecipient {
         if(offer.maker == 0) throw;     // must be valid offer
         if(offer.sells == false) throw; // must be selling
         
-        var unitLots           = etherValueSent / offer.maker_sell_ether_price;
-        var makerAssetBalance  = maker_asset_balance[id];
-
-        // clamp trade value to the value of the assets being sold
-        if(unitLots > makerAssetBalance / offer.maker_sell_asset_units) {
-            unitLots = makerAssetBalance / offer.maker_sell_asset_units;
-        }
+        var makerAssetBalance = maker_asset_balance[id];
         
+        var can_buy   = etherValueSent / offer.maker_sell_ether_price;
+        var can_sell  = makerAssetBalance / offer.maker_sell_asset_units;
+        
+        var unitLots = min(can_buy,can_sell);
+
         var etherValueOfTrade = unitLots * offer.maker_sell_ether_price;
         var assetValueOfTrade = unitLots * offer.maker_sell_asset_units;
         
-        if(etherValueOfTrade < unitLots) throw; // overflow check
-        if(assetValueOfTrade < unitLots) throw; // overflow check
+        if(etherValueOfTrade / offer.maker_sell_ether_price  != unitLots) throw; // overflow check
+        if(assetValueOfTrade / offer.maker_sell_asset_units != unitLots) throw; // overflow check
         
         if(etherValueOfTrade < etherValueSent) {
             if(!taker.send(etherValueSent - etherValueOfTrade)) throw; // refund ether change
@@ -323,13 +330,12 @@ contract proxyTrader is proxyRecipient {
         if(offer.maker == 0) throw;     // must be valid offer
         if(offer.buys == false) throw; // must be selling
         
-        var unitLots = assetValueOffered / offer.maker_buy_asset_units; 
         var makerEtherBalance = maker_ether_balance[id];
         
-        // clamp trade to available ether
-        if(unitLots > makerEtherBalance / offer.maker_buy_ether_price) {
-            unitLots = makerEtherBalance / offer.maker_buy_ether_price;
-        }
+        var can_buy  = assetValueOffered / offer.maker_buy_asset_units; 
+        var can_sell = makerEtherBalance / offer.maker_buy_ether_price;
+        
+        var unitLots = min(can_buy,can_sell);
         
         // no need to check overflow on assetValueOfTrade as 
         // unitLots * offer.maker_buy_asset_units no greater than assetValueOffered
